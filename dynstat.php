@@ -22,7 +22,35 @@ if ($config["minify"])
 }
 
 echo "Making static buid...\n";
-if(!is_dir("build"))
+if(is_dir("build"))
+{
+	function rmr($file)
+	{
+		if(is_dir($file))
+		{
+			foreach(scandir($file) as $f)
+			{
+				if (substr($f, 0, 1) != ".")
+				{
+					rmr($file."/".$f);
+				}
+			}
+			rmdir($file);
+		}
+		else
+		{
+			unlink($file);
+		}
+	}
+	foreach(scandir("build") as $file)
+	{
+		if (substr($file, 0, 1) != ".")
+		{
+			rmr("build/".$file);
+		}
+	}
+}
+else
 {
 	mkdir("build");
 }
