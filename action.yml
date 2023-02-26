@@ -1,0 +1,6 @@
+description: Develop dynamically, deploy statically.
+runs:
+  using: "composite"
+  steps:
+    - run: php ${{ github.action_path }}/dynstat.php
+      shell: bash
