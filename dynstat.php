@@ -14,7 +14,7 @@ $config["skip_empty"] ??= false;
 if ($config["minify"])
 {
 	echo "Initialising minify engine...\n";
-	$minify_engine = file_get_contents("https://raw.githubusercontent.com/mecha-cms/x.minify/1276b3bf8a0de02fd49e01664c81b71178f3401c/engine/plug/minify.php");
+	$minify_engine = file_get_contents("https://raw.githubusercontent.com/mecha-cms/x.minify/1cfc21f10a4f323b904afd9123e95c90379ffd28/engine/plug/minify.php");
 	$minify_engine = substr($minify_engine, 0, strpos($minify_engine, "\$state = "));
 	file_put_contents("minify_engine.php", $minify_engine);
 	require "minify_engine.php";
