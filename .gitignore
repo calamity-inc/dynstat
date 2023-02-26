@@ -1,0 +1,5 @@
+build/
+.dynstat.json
+*.html
+*.css
+*.js
