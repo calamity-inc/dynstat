@@ -14,6 +14,7 @@ You can configure dynstat with by creating `.dynstat.json` file. Any keys not pr
 
 ```JSON
 {
-	"minify": false
+	"minify": false,
+	"skip_empty": false
 }
 ```

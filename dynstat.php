@@ -8,6 +8,7 @@ if (is_file(".dynstat.json"))
 
 // Set config defaults
 $config["minify"] ??= false;
+$config["skip_empty"] ??= false;
 
 // Setup minify engine if enabled
 if ($config["minify"])
@@ -71,7 +72,14 @@ foreach(scandir(".") as $file)
 
 	$contents = ob_get_contents();
 	ob_end_clean();
-	if($config["minify"])
+	if($contents == "")
+	{
+		if ($config["skip_empty"])
+		{
+			continue;
+		}
+	}
+	else if($config["minify"])
 	{
 		if(substr($out_name, -5) == ".html")
 		{
