@@ -47,6 +47,14 @@ You can detect that your script is being executed by dynstat to produce a static
 
 - `BUILD_NAME` (string)
 
+## Install
+
+To have access to the `dynstat` command anywhere, you can install dynstat with Chocolatey, simply run the following command in Command Prompt (Admin):
+
+```batch
+powershell -command "(New-Object Net.WebClient).DownloadFile('https://calamity.gg/chocolatey/dynstat.nupkg', 'dynstat.nupkg')" && choco install dynstat -s . -y && del dynstat.nupkg
+```
+
 ## Credits
 
 The minify option is powered by [Mecha CMS' Minify Engine](https://github.com/mecha-cms/x.minify).
