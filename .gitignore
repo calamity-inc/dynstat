@@ -3,3 +3,7 @@ build/
 *.html
 *.css
 *.js
+
+# choco
+choco/src/dynstat.php
+*.nupkg
