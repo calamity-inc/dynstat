@@ -21,6 +21,13 @@ if ($config["minify"])
 	unlink("minify_engine.php");
 }
 
+// Discover name of php binary
+$php = "php";
+if (defined("PHP_WINDOWS_VERSION_MAJOR"))
+{
+	$php = '"'.explode("\n", shell_exec("where php"))[0].'"';
+}
+
 echo "Making static buid...\n";
 if(is_dir("build"))
 {
@@ -90,7 +97,7 @@ foreach(scandir(".") as $file)
 
 	ob_start();
 
-	passthru("php .dynstat_runtime.php ".$file);
+	passthru("$php .dynstat_runtime.php ".$file);
 
 	$out_name = "build/$file";
 	if(substr($out_name, -4) == ".php")
