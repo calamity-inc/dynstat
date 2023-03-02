@@ -10,6 +10,7 @@ if (is_file(".dynstat.json"))
 $config["minify"] ??= false;
 $config["skip_empty"] ??= false;
 $config["php_ext"] ??= [".php"];
+$config["nojekyll"] ??= true;
 
 // Setup minify engine if enabled
 if ($config["minify"])
@@ -63,7 +64,10 @@ else
 	mkdir("build");
 }
 
-file_put_contents("build/.nojekyll", "");
+if ($config["nojekyll"])
+{
+	file_put_contents("build/.nojekyll", "");
+}
 
 file_put_contents(".dynstat_runtime.php", <<<'EOC'
 <?php
