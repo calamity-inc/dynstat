@@ -9,6 +9,7 @@ if (is_file(".dynstat.json"))
 // Set config defaults
 $config["minify"] ??= false;
 $config["skip_empty"] ??= false;
+$config["php_ext"] ??= [".php"];
 
 // Setup minify engine if enabled
 if ($config["minify"])
@@ -87,6 +88,19 @@ $_SERVER = [
 require $file;
 EOC);
 
+function removePhpExtension($file)
+{
+	global $config;
+	foreach ($config["php_ext"] as $ext)
+	{
+		if (substr($file, -strlen($ext)) == $ext)
+		{
+			return substr($file, 0, -strlen($ext));
+		}
+	}
+	return null;
+}
+
 foreach(scandir(".") as $file)
 {
 	if(is_dir($file)
@@ -97,18 +111,21 @@ foreach(scandir(".") as $file)
 		continue;
 	}
 
-	ob_start();
-
-	passthru("$php .dynstat_runtime.php ".$file);
-
-	$out_name = "build/$file";
-	if(substr($out_name, -4) == ".php")
+	$name = removePhpExtension($file);
+	if ($name !== null) // Is a PHP file?
 	{
-		$out_name = substr($out_name, 0, -4).".html";
+		$out_name = "build/$name.html";
+		ob_start();
+		passthru("$php .dynstat_runtime.php ".$file);
+		$contents = ob_get_contents();
+		ob_end_clean();
+	}
+	else
+	{
+		$out_name = "build/$file";
+		$contents = file_get_contents($file);
 	}
 
-	$contents = ob_get_contents();
-	ob_end_clean();
 	if($contents == "")
 	{
 		if ($config["skip_empty"])

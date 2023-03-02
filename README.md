@@ -15,7 +15,8 @@ You can configure dynstat with by creating `.dynstat.json` file. Any keys not pr
 ```JSON
 {
     "minify": false,
-    "skip_empty": false
+    "skip_empty": false,
+    "php_ext": [".php"]
 }
 ```
 
