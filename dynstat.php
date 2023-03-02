@@ -6,14 +6,52 @@ if (is_file(".dynstat.json"))
 	$config = json_decode(file_get_contents(".dynstat.json"), true);
 }
 
-// Set config defaults
+// Set per-build config defaults
 $config["minify"] ??= false;
 $config["skip_empty"] ??= false;
-$config["php_ext"] ??= [".php"];
 $config["nojekyll"] ??= true;
 
+// Store per-build config
+$per_build_config_defaults = $config;
+unset($per_build_config_defaults["php_ext"]);
+unset($per_build_config_defaults["builds"]);
+
+// Set global config defaults
+$config["php_ext"] ??= [".php"];
+
+// Configure builds
+if (empty($config["builds"]))
+{
+	$config["builds"] = [
+		"build" => $per_build_config_defaults
+	];
+}
+else
+{
+	foreach($config["builds"] as &$bconf)
+	{
+		foreach($per_build_config_defaults as $k => $v)
+		{
+			$bconf[$k] ??= $v;
+		}
+	}
+}
+
+function isTrueForAnyBuild($key)
+{
+	global $config;
+	foreach($config["builds"] as &$bconf)
+	{
+		if ($bconf[$key])
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 // Setup minify engine if enabled
-if ($config["minify"])
+if (isTrueForAnyBuild("minify"))
 {
 	echo "Initialising minify engine...\n";
 	$minify_engine = file_get_contents("https://raw.githubusercontent.com/mecha-cms/x.minify/1cfc21f10a4f323b904afd9123e95c90379ffd28/engine/plug/minify.php");
@@ -30,67 +68,24 @@ if (defined("PHP_WINDOWS_VERSION_MAJOR"))
 	$php = '"'.explode("\n", shell_exec("where php"))[0].'"';
 }
 
-echo "Making static buid...\n";
-if(is_dir("build"))
+function rmr($file)
 {
-	function rmr($file)
+	if(is_dir($file))
 	{
-		if(is_dir($file))
+		foreach(scandir($file) as $f)
 		{
-			foreach(scandir($file) as $f)
+			if (substr($f, 0, 1) != ".")
 			{
-				if (substr($f, 0, 1) != ".")
-				{
-					rmr($file."/".$f);
-				}
+				rmr($file."/".$f);
 			}
-			rmdir($file);
 		}
-		else
-		{
-			unlink($file);
-		}
+		rmdir($file);
 	}
-	foreach(scandir("build") as $file)
+	else
 	{
-		if (substr($file, 0, 1) != ".")
-		{
-			rmr("build/".$file);
-		}
+		unlink($file);
 	}
 }
-else
-{
-	mkdir("build");
-}
-
-if ($config["nojekyll"])
-{
-	file_put_contents("build/.nojekyll", "");
-}
-
-file_put_contents(".dynstat_runtime.php", <<<'EOC'
-<?php
-$file = $argv[1];
-
-$path = "/";
-if($file != "index.php")
-{
-	$path .= $file;
-	if(substr($path, -4) == ".php")
-	{
-		$path = substr($path, 0, -4);
-	}
-}
-
-$_DYNSTAT = true;
-
-$_SERVER = [
-	"REQUEST_URI" => $path,
-];
-
-require $file;
-EOC);
 
 function removePhpExtension($file)
 {
@@ -105,58 +100,108 @@ function removePhpExtension($file)
 	return null;
 }
 
-foreach(scandir(".") as $file)
+foreach($config["builds"] as $bname => &$bconf)
 {
-	if(is_dir($file)
-		|| substr($file, 0, 1) == "."
-		|| $file==basename(__FILE__)
-		)
-	{
-		continue;
-	}
+	echo "Making ".$bname."...\n";
 
-	$name = removePhpExtension($file);
-	if ($name !== null) // Is a PHP file?
+	if(is_dir($bname))
 	{
-		$out_name = "build/$name.html";
-		ob_start();
-		passthru("$php .dynstat_runtime.php ".$file);
-		$contents = ob_get_contents();
-		ob_end_clean();
+		foreach(scandir($bname) as $file)
+		{
+			if (substr($file, 0, 1) != ".")
+			{
+				rmr($bname."/".$file);
+			}
+		}
 	}
 	else
 	{
-		$out_name = "build/$file";
-		$contents = file_get_contents($file);
+		mkdir($bname);
 	}
 
-	if($contents == "")
+	if ($config["nojekyll"])
 	{
-		if ($config["skip_empty"])
+		file_put_contents($bname."/.nojekyll", "");
+	}
+
+	file_put_contents(".dynstat_runtime.php", str_replace("__BUILD_NAME__", $bname, <<<'EOC'
+<?php
+$file = $argv[1];
+
+$path = "/";
+if($file != "index.php")
+{
+	$path .= $file;
+	if(substr($path, -4) == ".php")
+	{
+		$path = substr($path, 0, -4);
+	}
+}
+
+$_DYNSTAT = [
+	"BUILD_NAME" => "__BUILD_NAME__",
+];
+
+$_SERVER = [
+	"REQUEST_URI" => $path,
+];
+
+require $file;
+EOC));
+
+	foreach(scandir(".") as $file)
+	{
+		if(is_dir($file)
+			|| substr($file, 0, 1) == "."
+			|| $file==basename(__FILE__)
+			)
 		{
 			continue;
 		}
+
+		$name = removePhpExtension($file);
+		if ($name !== null) // Is a PHP file?
+		{
+			$out_name = "$bname/$name.html";
+			ob_start();
+			passthru("$php .dynstat_runtime.php ".$file);
+			$contents = ob_get_contents();
+			ob_end_clean();
+		}
+		else
+		{
+			$out_name = "$bname/$file";
+			$contents = file_get_contents($file);
+		}
+
+		if($contents == "")
+		{
+			if ($bconf["skip_empty"])
+			{
+				continue;
+			}
+		}
+		else if($bconf["minify"])
+		{
+			if(substr($out_name, -5) == ".html")
+			{
+				$contents = x\minify\f\minify_html($contents);
+			}
+			else if(substr($out_name, -4) == ".css")
+			{
+				$contents = x\minify\f\minify_css($contents);
+			}
+			else if(substr($out_name, -3) == ".js")
+			{
+				$contents = x\minify\f\minify_js($contents);
+			}
+			else if(substr($out_name, -5) == ".json")
+			{
+				$contents = x\minify\f\minify_json($contents);
+			}
+		}
+		file_put_contents($out_name, $contents);
 	}
-	else if($config["minify"])
-	{
-		if(substr($out_name, -5) == ".html")
-		{
-			$contents = x\minify\f\minify_html($contents);
-		}
-		else if(substr($out_name, -4) == ".css")
-		{
-			$contents = x\minify\f\minify_css($contents);
-		}
-		else if(substr($out_name, -3) == ".js")
-		{
-			$contents = x\minify\f\minify_js($contents);
-		}
-		else if(substr($out_name, -5) == ".json")
-		{
-			$contents = x\minify\f\minify_json($contents);
-		}
-	}
-	file_put_contents($out_name, $contents);
 }
 
 unlink(".dynstat_runtime.php");

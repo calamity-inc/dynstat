@@ -10,20 +10,42 @@ Develop dynamically, deploy statically.
 
 ## Config
 
-You can configure dynstat with by creating `.dynstat.json` file. Any keys not provided are implied to be the default value:
+You can configure dynstat with by creating `.dynstat.json` file.
+
+### Per-build
+
+- `minify` (default: `false`)
+- `skip_empty` (default: `false`) — don't write empty files to build directory?
+- `nojekyll` (default: `true`) — create .nojekyll file in build directory?
+
+### Global
+
+- `php_ext` (default: `[".php"]`)
+- `builds` (default: `{"build":{}}`)
+
+### Builds
+
+Dynstat can create multiple builds, each with their own config. For example, this creates the regular "build" plus a minified version:
 
 ```JSON
 {
     "minify": false,
-    "skip_empty": false,
-    "php_ext": [".php"],
-    "nojekyll": true
+    "builds": {
+        "build": {},
+        "minified": {
+            "minify": true
+        }
+    }
 }
 ```
 
 ## Runtime
 
 You can detect that your script is being executed by dynstat to produce a static build by using `!empty($_DYNSTAT)`.
+
+`$_DYNSTAT` is an array, which provides the following keys:
+
+- `BUILD_NAME` (string)
 
 ## Credits
 
