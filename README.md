@@ -19,6 +19,10 @@ You can configure dynstat with by creating `.dynstat.json` file. Any keys not pr
 }
 ```
 
+## Runtime
+
+You can detect that your script is being executed by dynstat to produce a static build by using `!empty($_DYNSTAT)`.
+
 ## Credits
 
 The minify option is powered by [Mecha CMS' Minify Engine](https://github.com/mecha-cms/x.minify).

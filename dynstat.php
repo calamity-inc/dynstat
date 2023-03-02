@@ -78,6 +78,8 @@ if($file != "index.php")
 	}
 }
 
+$_DYNSTAT = true;
+
 $_SERVER = [
 	"REQUEST_URI" => $path,
 ];
