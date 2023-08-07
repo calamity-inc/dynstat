@@ -7,6 +7,7 @@ if (is_file(".dynstat.json"))
 }
 
 // Set per-build config defaults
+$config["dirs"] ??= ["."];
 $config["minify"] ??= false;
 $config["skip_empty"] ??= false;
 $config["nojekyll"] ??= true;
@@ -100,6 +101,23 @@ function removePhpExtension($file)
 	return null;
 }
 
+function resolveOutputPrefix($subdir)
+{
+	while (substr($subdir, 0, 2) == "./")
+	{
+		$subdir = substr($subdir, 2);
+	}
+	if ($subdir == ".")
+	{
+		return "";
+	}
+	if (substr($subdir, -1) != "/")
+	{
+		$subdir .= "/";
+	}
+	return $subdir;
+}
+
 foreach($config["builds"] as $bname => &$bconf)
 {
 	echo "Making ".$bname."...\n";
@@ -149,58 +167,66 @@ $_SERVER = [
 require $file;
 EOC));
 
-	foreach(scandir(".") as $file)
+	foreach($bconf["dirs"] as $dir)
 	{
-		if(is_dir($file)
-			|| substr($file, 0, 1) == "."
-			|| $file==basename(__FILE__)
-			)
+		$prefix = resolveOutputPrefix($dir);
+		if($prefix)
 		{
-			continue;
+			mkdir($bname."/".$prefix);
 		}
-
-		$name = removePhpExtension($file);
-		if ($name !== null) // Is a PHP file?
+		foreach(scandir($dir) as $file)
 		{
-			$out_name = "$bname/$name.html";
-			ob_start();
-			passthru("$php .dynstat_runtime.php ".$file);
-			$contents = ob_get_contents();
-			ob_end_clean();
-		}
-		else
-		{
-			$out_name = "$bname/$file";
-			$contents = file_get_contents($file);
-		}
-
-		if($contents == "")
-		{
-			if ($bconf["skip_empty"])
+			if(is_dir($dir."/".$file)
+				|| substr($file, 0, 1) == "."
+				|| $file==basename(__FILE__)
+				)
 			{
 				continue;
 			}
+
+			$name = removePhpExtension($file);
+			if ($name !== null) // Is a PHP file?
+			{
+				$out_name = "$bname/$prefix$name.html";
+				ob_start();
+				passthru("$php .dynstat_runtime.php ".$dir."/".$file);
+				$contents = ob_get_contents();
+				ob_end_clean();
+			}
+			else
+			{
+				$out_name = "$bname/$prefix$file";
+				$contents = file_get_contents($dir."/".$file);
+			}
+
+			if($contents == "")
+			{
+				if ($bconf["skip_empty"])
+				{
+					continue;
+				}
+			}
+			else if($bconf["minify"])
+			{
+				if(substr($out_name, -5) == ".html")
+				{
+					$contents = x\minify\f\minify_html($contents);
+				}
+				else if(substr($out_name, -4) == ".css")
+				{
+					$contents = x\minify\f\minify_css($contents);
+				}
+				else if(substr($out_name, -3) == ".js")
+				{
+					$contents = x\minify\f\minify_js($contents);
+				}
+				else if(substr($out_name, -5) == ".json")
+				{
+					$contents = x\minify\f\minify_json($contents);
+				}
+			}
+			file_put_contents($out_name, $contents);
 		}
-		else if($bconf["minify"])
-		{
-			if(substr($out_name, -5) == ".html")
-			{
-				$contents = x\minify\f\minify_html($contents);
-			}
-			else if(substr($out_name, -4) == ".css")
-			{
-				$contents = x\minify\f\minify_css($contents);
-			}
-			else if(substr($out_name, -3) == ".js")
-			{
-				$contents = x\minify\f\minify_js($contents);
-			}
-			else if(substr($out_name, -5) == ".json")
-			{
-				$contents = x\minify\f\minify_json($contents);
-			}
-		}
-		file_put_contents($out_name, $contents);
 	}
 }
 

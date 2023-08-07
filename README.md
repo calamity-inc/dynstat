@@ -14,6 +14,7 @@ You can configure dynstat with by creating `.dynstat.json` file.
 
 ### Per-build
 
+- `dirs` (default: `["."]`)
 - `minify` (default: `false`)
 - `skip_empty` (default: `false`) — don't write empty files to build directory?
 - `nojekyll` (default: `true`) — create .nojekyll file in build directory?
