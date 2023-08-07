@@ -10,7 +10,7 @@ Develop dynamically, deploy statically.
 
 ## Config
 
-You can configure dynstat with by creating `.dynstat.json` file.
+You can configure dynstat by creating a `.dynstat.json` file.
 
 ### Per-build
 
