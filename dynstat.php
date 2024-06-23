@@ -189,7 +189,12 @@ EOC));
 			{
 				$out_name = "$bname/$prefix$name.html";
 				ob_start();
-				passthru("$php .dynstat_runtime.php ".$dir."/".$file);
+				$path = $dir."/".$file;
+				if (substr($path, 0, 2) == "./")
+				{
+					$path = substr($path, 2);
+				}
+				passthru("$php .dynstat_runtime.php ".$path);
 				$contents = ob_get_contents();
 				ob_end_clean();
 			}
