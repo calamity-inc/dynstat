@@ -1,4 +1,5 @@
-<?php
+<?php // https://github.com/calamity-inc/dynstat
+
 // Load config
 $config = [];
 if (is_file(".dynstat.json"))
