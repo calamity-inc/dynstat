@@ -189,6 +189,10 @@ EOC));
 			if ($name !== null) // Is a PHP file?
 			{
 				$out_name = "$bname/$prefix$name.html";
+				if (substr($out_name, -9) == ".xml.html")
+				{
+					$out_name = substr($out_name, 0, -5);
+				}
 				ob_start();
 				$path = $dir."/".$file;
 				if (substr($path, 0, 2) == "./")
