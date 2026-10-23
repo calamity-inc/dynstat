@@ -165,7 +165,8 @@ $_SERVER = [
 	"REQUEST_URI" => $path,
 ];
 
-require $file;
+chdir(dirname($file));
+require basename($file);
 EOC));
 
 	foreach($bconf["dirs"] as $dir)
